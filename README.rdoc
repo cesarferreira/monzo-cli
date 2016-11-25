@@ -1,6 +1,0 @@
-= monzo
-
-Describe your project here
-
-:include:monzo.rdoc
-

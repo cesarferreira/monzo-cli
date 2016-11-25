@@ -2,6 +2,8 @@
 require 'gli'
 begin # XXX: Remove this begin/rescue before distributing your app
 require 'monzo'
+require 'terminal-table'
+
 rescue LoadError
   STDERR.puts "In development, you need to use `bundle exec bin/monzo` to run your app"
   STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
@@ -42,7 +44,15 @@ command :accounts do |c|
     # If you have any errors, just raise them
     # raise "that command made no sense"
 
-    puts "accounts command ran"
+    table = Terminal::Table.new do |t|
+      t << ['Description', 'Date created']
+      t << :separator
+      t.add_row ['Peter Pan\'s Account', '2015-11-13T12:17:42Z']
+    end
+
+    puts table
+
+    # puts "accounts command ran"
   end
 end
 
@@ -50,7 +60,16 @@ desc 'States your account balance'
 # arg_name 'Describe arguments to balance here'
 command :balance do |c|
   c.action do |global_options,options,args|
-    puts "balance command ran"
+
+    table = Terminal::Table.new do |t|
+      t << ['Balance', 'Spent today']
+      t << :separator
+      t << ['£490', '£10']
+    end
+
+    puts table
+
+    # puts "balance command ran"
   end
 end
 

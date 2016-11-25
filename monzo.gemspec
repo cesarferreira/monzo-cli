@@ -1,6 +1,6 @@
 # Ensure we require the local version and not one we might have installed already
 require File.join([File.dirname(__FILE__),'lib','monzo','version.rb'])
-spec = Gem::Specification.new do |s| 
+spec = Gem::Specification.new do |s|
   s.name = 'monzo'
   s.version = Monzo::VERSION
   s.author = 'Your Name Here'
@@ -20,4 +20,5 @@ spec = Gem::Specification.new do |s|
   s.add_development_dependency('rdoc')
   s.add_development_dependency('aruba')
   s.add_runtime_dependency('gli','2.14.0')
+  s.add_runtime_dependency('terminal-table','>= 1.7.3')
 end
