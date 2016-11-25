@@ -3,11 +3,12 @@ require 'gli'
 begin # XXX: Remove this begin/rescue before distributing your app
 require 'monzo'
 require 'terminal-table'
+require 'yaml'
 
 rescue LoadError
   STDERR.puts "In development, you need to use `bundle exec bin/monzo` to run your app"
   STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
-  STDERR.puts "Feel free to remove this message from bin/monzo now"
+  STDERR.puts "Feel free to remove this message from bin/monzo-cli now"
   exit 64
 end
 

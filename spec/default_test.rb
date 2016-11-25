@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'config_parser'
 
 class DefaultTest < Test::Unit::TestCase
 
