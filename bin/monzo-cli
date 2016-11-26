@@ -4,6 +4,7 @@ require 'monzo'
 require 'terminal-table'
 require 'colorize'
 require 'monzo/config_parser'
+require 'monzo/monzo_api'
 
 include GLI::App
 
@@ -11,7 +12,7 @@ program_desc 'Monzo command line interface client'
 
 version Monzo::VERSION
 
-@path_to_config = '~/.monzo-cli.yml'
+@path_to_config = Dir.home + '/.monzo-cli.yml'
 
 subcommand_option_handling :normal
 arguments :strict
@@ -47,7 +48,9 @@ command :balance do |c|
       t << ['£490'.green, '£10'.green]
     end
 
-    puts table
+    # puts table
+
+    client = MonzoApi.new @config
 
   end
 end

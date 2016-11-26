@@ -46,7 +46,7 @@ Please create/edit it on `~/.monzo-cli.yml` with this format:
 
 
 ```yml
-user_18231092askdas9212
+user_id: 18231092askdas9212
 account_id: acc_0aksdaklsjSh28181
 access_token: Qnjdas8hakxdjasQscGVgnVGIVXpvpZ5uCxkQ5XLnDHnOPoBtXreQ6adBo
 
