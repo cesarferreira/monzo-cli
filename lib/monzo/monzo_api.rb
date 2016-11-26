@@ -1,4 +1,4 @@
-require 'mondo'
+require_relative '../api/mondo'
 
 class MonzoApi
 
@@ -7,11 +7,21 @@ class MonzoApi
     @account_id = config.parse['account_id']
     @access_token = config.parse['access_token']
 
-    client = Mondo::Client.new(token: @access_token, account_id: @user_id)
-    puts client.balance @account_id
+    @monzo = Mondo::Client.new(
+        token: @access_token,
+        account_id: @user_id)
   end
 
-  def initialize_monzo_api
-
+  def balance
+    @monzo.balance @account_id
   end
+
+  def accounts
+    @monzo.accounts
+  end
+
+  def transactions
+    @monzo.transactions
+  end
+
 end

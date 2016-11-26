@@ -42,15 +42,18 @@ desc 'States your account balance'
 command :balance do |c|
   c.action do |global_options, options, args|
 
+    result = MonzoApi.new(@config).balance
+
+    balance = result.balance
+    spent_today = result.spent_today
+
     table = Terminal::Table.new do |t|
       t << ['Balance', 'Spent today']
       t << :separator
-      t << ['£490'.green, '£10'.green]
+      t << ["£#{balance}".green, "£#{spent_today}".green]
     end
 
-    # puts table
-
-    client = MonzoApi.new @config
+    puts table
 
   end
 end

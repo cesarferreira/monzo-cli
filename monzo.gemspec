@@ -22,8 +22,15 @@ spec = Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'gli', '2.14.0'
   s.add_runtime_dependency 'terminal-table', '>= 1.7.3'
-  s.add_runtime_dependency 'mondo', '~> 0.5.0'
+  # s.add_runtime_dependency 'mondo', '~> 0.5.0'
   s.add_runtime_dependency 'colorize', '~> 0.7'
+
+
+
+  s.add_runtime_dependency 'oauth2', '~> 1.0'
+  s.add_runtime_dependency 'money'
+  s.add_runtime_dependency 'multi_json', '~> 1.10'
+  s.add_runtime_dependency 'activesupport', '~> 3.2'
 
 
 end

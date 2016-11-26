@@ -2,14 +2,20 @@ PATH
   remote: .
   specs:
     monzo-cli (0.0.1)
+      activesupport (~> 3.2)
       colorize (~> 0.7)
       gli (= 2.14.0)
-      mondo (~> 0.5.0)
+      money
+      multi_json (~> 1.10)
+      oauth2 (~> 1.0)
       terminal-table (>= 1.7.3)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    activesupport (3.2.22.5)
+      i18n (~> 0.6, >= 0.6.4)
+      multi_json (~> 1.0)
     aruba (0.14.2)
       childprocess (~> 0.5.6)
       contracts (~> 0.9)
@@ -43,10 +49,6 @@ GEM
     i18n (0.7.0)
     jwt (1.5.6)
     method_source (0.8.2)
-    mondo (0.5.0)
-      money
-      multi_json (~> 1.10)
-      oauth2 (~> 1.0)
     money (6.7.1)
       i18n (>= 0.6.4, <= 0.7.0)
       sixarm_ruby_unaccent (>= 1.1.1, < 2)
