@@ -116,10 +116,10 @@ module Mondo
 
     # @method transactions
     # @return [Transactions] all transactions for this user
-    def transactions(opts = {})
-      raise ClientError.new("You must provide an account id to query transactions") unless self.account_id
-      opts.merge!(account_id: self.account_id)
-      resp = api_get("/transactions", opts)
+    def transactions(account_id = nil)
+      account_id ||= self.account_id
+      raise ClientError.new("You must provide an account id to see your balance") unless account_id
+      resp = api_get("transactions", account_id: account_id)
       return resp if resp.error.present?
       resp.parsed["transactions"].map { |tx| Transaction.new(tx, self) }
     end
@@ -164,9 +164,6 @@ module Mondo
       raise ClientError.new("You must provide an account id to list webhooks") unless self.account_id
       @web_hooks ||= begin
         resp = api_get("webhooks", account_id: self.account_id)
-
-        puts resp.inspect
-
         resp.parsed['webhooks'].map { |hook| WebHook.new(hook, self) }
       end
     end

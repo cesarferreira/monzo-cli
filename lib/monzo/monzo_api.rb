@@ -21,7 +21,7 @@ class MonzoApi
   end
 
   def transactions
-    @monzo.transactions
+    @monzo.transactions(@account_id).reverse
   end
 
 end

@@ -62,7 +62,20 @@ desc 'List your transactions'
 arg_name 'Maybe pagination'
 command :transactions do |c|
   c.action do |global_options, options, args|
-    puts 'transactions command ran'
+
+    transactions = MonzoApi.new(@config).transactions
+
+    table = Terminal::Table.new do |t|
+      t << %w(Amount date Description Balance)
+
+      transactions.each { |item|
+        t << :separator
+        t << ["£ #{item.amount}".green, item.created, item.description, "£ #{item.account_balance}".green]
+      }
+    end
+
+    puts table
+
   end
 end
 
