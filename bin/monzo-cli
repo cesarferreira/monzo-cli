@@ -50,7 +50,7 @@ command :balance do |c|
     table = Terminal::Table.new do |t|
       t << ['Balance', 'Spent today']
       t << :separator
-      t << ["£#{balance}".green, "£#{spent_today}".green]
+      t << ["£ #{balance}".green, "£ #{spent_today}".green]
     end
 
     puts table
@@ -98,17 +98,8 @@ end
 
 
 def show_no_config_found_error
-
-  open_operation = "vim #{@path_to_config}".green
-
   puts "\nError reading from #{@path_to_config.green}"
-  puts "Get your information from this URL: https://developers.getmondo.co.uk/api/playground"
-  puts "Please create/edit it with #{open_operation} with this format:\n\n"
-
-  puts "  user_id: user_18231092askdas9212".yellow
-  puts "  account_id: acc_0aksdaklsjSh28181".yellow
-  puts "  access_token: Qnjdas8hakxdjasQscGVgnVGIVXpvpZ5uCxkQ5XLnDHnOPoBtXreQ6adBo".yellow
-
+  puts 'Instructions to set everything up in here: https://github.com/cesarferreira/monzo-cli#setup'
   puts "\n\n"
 end
 

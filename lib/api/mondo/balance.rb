@@ -5,7 +5,7 @@ module Mondo
     end
 
     def spent_today
-      Money.new(raw_data['spent_today'], currency)
+      Money.new(raw_data['spend_today'], currency)
     end
 
     def currency

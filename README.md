@@ -39,9 +39,10 @@ $ monzo-cli accounts
 gem install monzo-cli
 ```
 
+## Setup
 Get your access tokens from this URL: https://developers.getmondo.co.uk/api/playground
-  
-  
+
+
 Please create/edit it on `~/.monzo-cli.yml` with this format:
 
 
@@ -51,7 +52,10 @@ account_id: acc_0aksdaklsjSh28181
 access_token: Qnjdas8hakxdjasQscGVgnVGIVXpvpZ5uCxkQ5XLnDHnOPoBtXreQ6adBo
 
 ```
-  
+
+## Caveats
+- Right now the `access_token` expires everyday, still need to find a way to refresh it automatically
+
 ## Contributing
 I welcome and encourage all pull requests. It usually will take me within 24-48 hours to respond to any issue or request. Here are some basic rules to follow to ensure timely addition of your request:
   1. If its a feature, bugfix, or anything please only change code to what you specify.
