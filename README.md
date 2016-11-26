@@ -29,6 +29,17 @@ $ monzo-cli accounts
 +---------------------+----------------------+
 | Description         | Date created         |
 +---------------------+----------------------+
-| Peter Pan's Account | 2015-11-13T12:17:42Z |
+| Peter Pans Account | 2015-11-13T12:17:42Z |
 +---------------------+----------------------+
 ```
+
+## Contributing
+I welcome and encourage all pull requests. It usually will take me within 24-48 hours to respond to any issue or request. Here are some basic rules to follow to ensure timely addition of your request:
+  1. If its a feature, bugfix, or anything please only change code to what you specify.
+  2. Please keep PR titles easy to read and descriptive of changes, this will make them easier to merge :)
+  3. Pull requests _must_ be made against `develop` branch. Any other branch (unless specified by the maintainers) will get rejected.
+  4. Check for existing [issues](https://github.com/cesarferreira/monzo-cli/issues) first, before filing an issue.
+  5. Have fun!
+
+### Created & Maintained By
+[Cesar Ferreira](https://github.com/cesarferreira) ([@cesarmcferreira](https://www.twitter.com/cesarmcferreira))

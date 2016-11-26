@@ -1,4 +1,3 @@
-require 'yml'
 
 class MonzoApi
 
