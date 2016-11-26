@@ -1,5 +1,5 @@
 # Ensure we require the local version and not one we might have installed already
-require File.join([File.dirname(__FILE__),'lib','monzo','version.rb'])
+require File.join([File.dirname(__FILE__), 'lib', 'monzo', 'version.rb'])
 spec = Gem::Specification.new do |s|
   s.name = 'monzo-cli'
   s.version = Monzo::VERSION
@@ -23,7 +23,7 @@ spec = Gem::Specification.new do |s|
   s.add_runtime_dependency 'gli', '2.14.0'
   s.add_runtime_dependency 'terminal-table', '>= 1.7.3'
   s.add_runtime_dependency 'mondo', '~> 0.5.0'
-  s.add_dependency 'colorize', '~> 0.7'
+  s.add_runtime_dependency 'colorize', '~> 0.7'
 
 
 end

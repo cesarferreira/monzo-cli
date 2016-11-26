@@ -1,44 +1,25 @@
 #!/usr/bin/env ruby
 require 'gli'
-begin # XXX: Remove this begin/rescue before distributing your app
 require 'monzo'
 require 'terminal-table'
-require 'yaml'
-
-rescue LoadError
-  STDERR.puts "In development, you need to use `bundle exec bin/monzo` to run your app"
-  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
-  STDERR.puts "Feel free to remove this message from bin/monzo-cli now"
-  exit 64
-end
+require 'colorize'
+require 'monzo/config_parser'
 
 include GLI::App
 
-program_desc 'CLI client for your monzo'
+program_desc 'Monzo command line interface client'
 
 version Monzo::VERSION
+
+@path_to_config = '~/.monzo-cli.yml'
 
 subcommand_option_handling :normal
 arguments :strict
 
-# desc 'Describe some switch here'
-# switch [:s,:switch]
-#
-# desc 'Describe some flag here'
-# default_value 'the default'
-# arg_name 'The name of the argument'
-# flag [:f,:flagname]
-
 desc 'List all of your accounts'
-arg_name 'No args required'
 command :accounts do |c|
-  # c.desc 'Describe a switch to accounts'
-  # c.switch :s
 
-  # c.desc 'Describe a flag to accounts'
-  # c.default_value 'default'
-  # c.flag :f
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
 
     # Your command logic here
 
@@ -53,53 +34,51 @@ command :accounts do |c|
 
     puts table
 
-    # puts "accounts command ran"
   end
 end
 
 desc 'States your account balance'
-# arg_name 'Describe arguments to balance here'
 command :balance do |c|
-  c.action do |global_options,options,args|
+  c.action do |global_options, options, args|
 
     table = Terminal::Table.new do |t|
       t << ['Balance', 'Spent today']
       t << :separator
-      t << ['£490', '£10']
+      t << ['£490'.green, '£10'.green]
     end
 
     puts table
 
-    # puts "balance command ran"
   end
 end
 
 desc 'List your transactions'
 arg_name 'Maybe pagination'
 command :transactions do |c|
-  c.action do |global_options,options,args|
-    puts "transactions command ran"
+  c.action do |global_options, options, args|
+    puts 'transactions command ran'
   end
 end
 
-desc 'Authenticate here'
-arg_name 'Describe arguments to authenticate here'
-command :authenticate do |c|
-  c.action do |global_options,options,args|
-    puts "authenticate command ran"
-  end
-end
+pre do |global, command, options, args|
 
-pre do |global,command,options,args|
+  @config = ConfigParser.new(@path_to_config)
+
   # Pre logic here
   # Return true to proceed; false to abort and not call the
   # chosen command
   # Use skips_pre before a command to skip this block
   # on that command only
-  true
+
+  if @config.valid?
+    true
+  else
+    show_no_config_found_error
+    false
+  end
 end
 
-post do |global,command,options,args|
+post do |global, command, options, args|
   # Post logic here
   # Use skips_post before a command to skip this
   # block on that command only
@@ -109,6 +88,22 @@ on_error do |exception|
   # Error logic here
   # return false to skip default error handling
   true
+end
+
+
+def show_no_config_found_error
+
+  open_operation = "vim #{@path_to_config}".green
+
+  puts "\nError reading from #{@path_to_config.green}"
+  puts "Get your information from this URL: https://developers.getmondo.co.uk/api/playground"
+  puts "Please create/edit it with #{open_operation} with this format:\n\n"
+
+  puts "  user_id: user_18231092askdas9212".yellow
+  puts "  account_id: acc_0aksdaklsjSh28181".yellow
+  puts "  access_token: Qnjdas8hakxdjasQscGVgnVGIVXpvpZ5uCxkQ5XLnDHnOPoBtXreQ6adBo".yellow
+
+  puts "\n\n"
 end
 
 exit run(ARGV)
