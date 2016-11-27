@@ -216,9 +216,13 @@ module Mondo
       when 200..299, 300..399
         # on non-redirecting 3xx statuses, just return the response
         response
-      when 400..599
-        error = ApiError.new(response)
-        raise(error, "Status code #{response.status}")
+        when 400..599
+
+          if response.status == 401
+            raise 'Your token has expired, follow these instructions: https://github.com/cesarferreira/monzo-cli#setup'
+          end
+          error = ApiError.new(response)
+          raise(error, "Status code #{response.status}")
       else
         error = ApiError.new(response)
         raise(error, "Unhandled status code value of #{response.status}")
