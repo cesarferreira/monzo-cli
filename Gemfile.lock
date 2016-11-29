@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    monzo-cli (0.2.1)
+    monzo-cli (0.2.2)
       activesupport (~> 3.2)
       colorize (~> 0.7)
       gli (= 2.14.0)
