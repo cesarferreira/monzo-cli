@@ -30,7 +30,7 @@ spec = Gem::Specification.new do |s|
   s.add_runtime_dependency 'oauth2', '~> 1.0'
   s.add_runtime_dependency 'money'
   s.add_runtime_dependency 'multi_json', '~> 1.10'
-  s.add_runtime_dependency 'activesupport', '~> 3.2'
+  s.add_runtime_dependency 'activesupport', '>= 3.2', '< 6.0'
 
 
 end
