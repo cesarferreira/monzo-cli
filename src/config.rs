@@ -51,7 +51,7 @@ impl Config {
     pub fn access_token(&self) -> Result<&str> {
         self.access_token.as_deref().filter(|t| !t.is_empty()).ok_or_else(|| {
             anyhow::anyhow!(
-                "No access token configured. Run `monzo-cli auth login` to authenticate."
+                "No access token configured. Run `monzo auth login` to authenticate."
             )
         })
     }
@@ -59,7 +59,7 @@ impl Config {
     pub fn account_id(&self) -> Result<&str> {
         self.account_id.as_deref().filter(|t| !t.is_empty()).ok_or_else(|| {
             anyhow::anyhow!(
-                "No account ID configured. Run `monzo-cli auth login` or set it in the config."
+                "No account ID configured. Run `monzo auth login` or set it in the config."
             )
         })
     }

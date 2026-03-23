@@ -47,7 +47,7 @@ pub async fn login_flow(client_id: &str, client_secret: &str) -> Result<()> {
 
     println!("Authentication successful! Tokens saved.");
     println!("\nIMPORTANT: Open the Monzo app and approve the login request.");
-    println!("Your access token expires in ~6 hours. Use `monzo-cli auth refresh` to renew.");
+    println!("Your access token expires in ~6 hours. Use `monzo auth refresh` to renew.");
 
     // Try to auto-detect account
     println!("\nDetecting accounts...");
@@ -61,7 +61,7 @@ pub async fn login_flow(client_id: &str, client_secret: &str) -> Result<()> {
         }
         _ => {
             println!("Could not auto-detect account. You may need to approve in the Monzo app first.");
-            println!("Then run: monzo-cli accounts");
+            println!("Then run: monzo accounts");
         }
     }
 
@@ -140,13 +140,13 @@ pub async fn refresh_flow() -> Result<()> {
         .client_id
         .as_deref()
         .filter(|s| !s.is_empty())
-        .context("No client_id in config. Run `monzo-cli auth login` first.")?
+        .context("No client_id in config. Run `monzo auth login` first.")?
         .to_string();
     let client_secret = config
         .client_secret
         .as_deref()
         .filter(|s| !s.is_empty())
-        .context("No client_secret in config. Run `monzo-cli auth login` first.")?
+        .context("No client_secret in config. Run `monzo auth login` first.")?
         .to_string();
     let refresh_token = config
         .refresh_token
@@ -154,7 +154,7 @@ pub async fn refresh_flow() -> Result<()> {
         .filter(|s| !s.is_empty())
         .context(
             "No refresh token available. Only confidential clients get refresh tokens.\n\
-             Run `monzo-cli auth login` to re-authenticate.",
+             Run `monzo auth login` to re-authenticate.",
         )?
         .to_string();
 
@@ -186,7 +186,7 @@ pub fn set_token(token: &str, account_id: Option<&str>) -> Result<()> {
     if account_id.is_some() {
         println!("Account ID saved.");
     } else {
-        println!("Tip: run `monzo-cli accounts` to see your accounts and set one.");
+        println!("Tip: run `monzo accounts` to see your accounts and set one.");
     }
     Ok(())
 }

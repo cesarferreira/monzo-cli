@@ -15,7 +15,7 @@ impl MonzoClient {
     pub fn new(config: &Config) -> Result<Self> {
         let token = config.access_token()?.to_string();
         let http = Client::builder()
-            .user_agent("monzo-cli/1.0")
+            .user_agent("monzo/1.0")
             .build()?;
         Ok(Self { http, token })
     }
@@ -332,8 +332,8 @@ impl MonzoClient {
         if resp.status() == 401 {
             anyhow::bail!(
                 "Authentication failed (401). Your token may have expired.\n\
-                 Run `monzo-cli auth refresh` to refresh your token, or\n\
-                 Run `monzo-cli auth login` to re-authenticate."
+                 Run `monzo auth refresh` to refresh your token, or\n\
+                 Run `monzo auth login` to re-authenticate."
             );
         }
         if resp.status() == 429 {
