@@ -1,0 +1,14 @@
+/Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/deps/serde-696937e59e577c7a.d: /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/build/serde-9e876a4c0fb7a064/out/private.rs
+
+/Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/deps/libserde-696937e59e577c7a.rlib: /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/build/serde-9e876a4c0fb7a064/out/private.rs
+
+/Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/deps/libserde-696937e59e577c7a.rmeta: /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/build/serde-9e876a4c0fb7a064/out/private.rs
+
+/Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/cesarferreira/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/build/serde-9e876a4c0fb7a064/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/cesarferreira/code/github/monzo-cli/monzo-rs/target/debug/build/serde-9e876a4c0fb7a064/out
