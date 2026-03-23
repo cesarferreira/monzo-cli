@@ -1,92 +1,179 @@
 # monzo-cli
 
-![](http://ruby-gem-downloads-badge.herokuapp.com/monzo-cli?type=total)
-[![Gem Version](https://badge.fury.io/rb/monzo-cli.svg)](https://badge.fury.io/rb/monzo-cli)
-[![Build Status](https://travis-ci.org/cesarferreira/lasertag.svg?branch=master)](https://travis-ci.org/cesarferreira/lasertag)  [![security](https://hakiri.io/github/cesarferreira/lasertag/master.svg)](https://hakiri.io/github/cesarferreira/lasertag/master)
-[![Code Climate](https://codeclimate.com/github/cesarferreira/monzo-cli/badges/gpa.svg)](https://codeclimate.com/github/cesarferreira/monzo-cli)
-[![Inline docs](http://inch-ci.org/github/cesarferreira/monzo-cli.svg?branch=master)](http://inch-ci.org/github/cesarferreira/monzo-cli)
+[![CI](https://github.com/cesarferreira/monzo-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarferreira/monzo-cli/actions/workflows/ci.yml)
 
-> Finally a bank with an API
+> A modern CLI for Monzo Bank, rewritten in Rust
 
-![Image](extras/header.jpg)
+## Usage
 
-# Usage
-## Balance
+### Balance
 
 ```bash
-$ monzo-cli balance
+$ monzo balance
 
-  +---------+-------------+
-  | Balance | Spent today |
-  +---------+-------------+
-  | £490    | £10         |
-  +---------+-------------+
+  ┌────────────────────┬───────────┐
+  │                    │ Amount    │
+  ├────────────────────┼───────────┤
+  │ Balance            │   £490.00 │
+  │ Total Balance      │ £1,250.00 │
+  │ Spent Today        │   -£10.50 │
+  │ Including Savings  │ £3,500.00 │
+  └────────────────────┴───────────┘
 ```
 
-## Transactions list
+### Transactions
 
 ```bash
-$ monzo-cli transactions
+$ monzo transactions --since 7d
 
-  +----------+---------------------------+------------------------------------------+----------+
-  | Amount   | date                      | Description                              | Balance  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ -5.59  | 2016-11-26T02:30:17+00:00 | Amazon EU              AMAZON.CO.UK  LUX | £ 37.42  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ -46.99 | 2016-11-25T11:01:21+00:00 | Amazon Prime Now UK    811-111-1111  LUX | £ 43.01  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ 1.00   | 2016-11-25T11:00:55+00:00 | Amazon Prime Now UK    811-111-1111  LUX | £ 90.00  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ -1.00  | 2016-11-25T11:00:54+00:00 | Amazon Prime Now UK    811-111-1111  LUX | £ 89.00  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ -10.00 | 2016-11-25T09:39:47+00:00 | SKY RESTAURANT         STAFF TOP UP  GBR | £ 90.00  |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ 0.00   | 2016-11-25T08:59:17+00:00 | Uber BV                help.uber.com NLD | £ 100.00 |
-  +----------+---------------------------+------------------------------------------+----------+
-  | £ 100.00 | 2016-11-24T20:00:02+00:00 | Initial top up                           | £ 100.00 |
-  +----------+---------------------------+------------------------------------------+----------+
+  ┌──────────────────┬────────────────────┬────────────┬──────────┬───────────┐
+  │ Date             │ Description        │ Category   │   Amount │   Balance │
+  ├──────────────────┼────────────────────┼────────────┼──────────┼───────────┤
+  │ 2026-03-23 09:15 │ Pret A Manger      │ eating_out │   -£3.50 │   £490.00 │
+  │ 2026-03-22 18:30 │ Tesco              │ groceries  │  -£45.20 │   £493.50 │
+  │ 2026-03-22 08:00 │ TfL                │ transport  │   -£2.80 │   £538.70 │
+  │ 2026-03-21 20:15 │ Netflix            │ bills      │   -£9.99 │   £541.50 │
+  └──────────────────┴────────────────────┴────────────┴──────────┴───────────┘
+  4 transactions
 ```
 
-## Accounts
+### Pots
 
 ```bash
-$ monzo-cli accounts
+$ monzo pots
 
-  +---------------------+----------------------+
-  | Description         | Date created         |
-  +---------------------+----------------------+
-  | Peter Pans Account  | 2015-11-13T12:17:42Z |
-  +---------------------+----------------------+
+  ┌──────────────────┬───────────┬─────────────────┬──────────┬──────────┐
+  │ Name             │   Balance │            Goal │ Type     │ Round-up │
+  ├──────────────────┼───────────┼─────────────────┼──────────┼──────────┤
+  │ Holiday Fund     │   £500.00 │ £1,000.00 (50%) │ -        │ -        │
+  │ Emergency        │ £1,200.00 │               - │ -        │ -        │
+  │ Coin Jar         │    £47.30 │               - │ -        │ Yes      │
+  └──────────────────┴───────────┴─────────────────┴──────────┴──────────┘
+  3 pots | Total: £1,747.30
 ```
+
+### Spending Insights
+
+```bash
+$ monzo insights categories --since 30d
+
+  Spending by Category
+  ┌──────────────────────┬──────────┬────────────┬─────────────────┐
+  │ Category             │    Spent │ % of Total │ Bar             │
+  ├──────────────────────┼──────────┼────────────┼─────────────────┤
+  │ groceries            │ -£245.00 │        35% │ ████████████████│
+  │ eating_out           │ -£180.50 │        26% │ █████████████   │
+  │ transport            │  -£95.00 │        14% │ ███████         │
+  │ bills                │  -£85.99 │        12% │ ██████          │
+  │ entertainment        │  -£45.00 │         6% │ ███             │
+  └──────────────────────┴──────────┴────────────┴─────────────────┘
+  Total: -£651.49
+```
+
+### Search
+
+```bash
+$ monzo search "coffee" --since 90d
+$ monzo search "Amazon" -n 50
+```
+
+### Export
+
+```bash
+$ monzo export -f csv -o spending.csv --since 90d
+$ monzo export -f json -o data.json --since 1y
+```
+
+### JSON Mode
+
+Every command supports `--json` for structured output, useful for scripting or piping into `jq`:
+
+```bash
+$ monzo --json balance | jq '.balance / 100'
+$ monzo --json tx --since 30d -c eating_out
+$ monzo --json pots
+```
+
+## All Commands
+
+| Command | Description |
+|---|---|
+| `balance` | Show account balance, spend today, savings |
+| `transactions` | List transactions with filters (category, amount, date, search) |
+| `tx` | Alias for `transactions` |
+| `transaction <id>` | Show full transaction detail |
+| `annotate <id> <key> <value>` | Add metadata to a transaction |
+| `pots` | List pots with balances and goals |
+| `pots deposit <name> <amount>` | Deposit into a pot |
+| `pots withdraw <name> <amount>` | Withdraw from a pot |
+| `search <query>` | Full-text search across transactions |
+| `insights` | Full spending report |
+| `insights categories` | Spending breakdown by category |
+| `insights merchants` | Top merchants by total spend |
+| `insights daily` | Daily spending chart |
+| `insights weekly` | Weekly spending totals |
+| `insights predict` | Monthly projection with historical comparison |
+| `insights recurring` | Detect subscriptions and recurring payments |
+| `export` | Export transactions to CSV or JSON |
+| `webhooks` | List, add, or remove webhooks |
+| `feed <title>` | Push a notification to your Monzo app |
+| `accounts` | List all accounts |
+| `auth login` | OAuth2 login (opens browser) |
+| `auth refresh` | Refresh expired token |
+| `auth set-token <token>` | Quick setup with playground token |
+| `auth status` | Check if token is valid |
 
 ## Install
 
 ```bash
-gem install monzo-cli
+cargo install monzo-cli
+```
+
+Or via [cargo-binstall](https://github.com/cargo-bins/cargo-binstall):
+
+```bash
+cargo binstall monzo-cli
+```
+
+Or build from source:
+
+```bash
+cargo build --release
+# Binary at target/release/monzo
 ```
 
 ## Setup
-Get your access tokens from this URL: https://developers.getmondo.co.uk/api/playground
 
+### Option 1: OAuth2 (recommended)
 
-Please create/edit it on `~/.monzo-cli.yml` with this format:
+1. Create an OAuth client at [developers.monzo.com](https://developers.monzo.com)
+2. Set the redirect URL to `http://localhost:6789/callback`
+3. Run:
 
+```bash
+monzo auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
+```
 
-```yml
-user_id: 18231092askdas9212
-account_id: acc_0aksdaklsjSh28181
-access_token: Qnjdas8hakxdjasQscGVgnVGIVXpvpZ5uCxkQ5XLnDHnOPoBtXreQ6adBo
+### Option 2: Playground token (quick start)
 
+Get a token from the [Monzo API Playground](https://developers.monzo.com/api/playground):
+
+```bash
+monzo auth set-token YOUR_ACCESS_TOKEN
 ```
 
 ## Caveats
-- Right now the `access_token` expires everyday, still need to find a way to refresh it automatically
+
+- Access tokens expire after ~6 hours. If you logged in via OAuth2, **tokens are refreshed automatically** when they expire - no manual action needed
+- After initial auth, you have a 5-minute window to fetch full transaction history (Monzo SCA restriction)
+- Pots with "added security" cannot be withdrawn from via the API
 
 ## Contributing
-I welcome and encourage all pull requests. It usually will take me within 24-48 hours to respond to any issue or request. Here are some basic rules to follow to ensure timely addition of your request:
+
+I welcome and encourage all pull requests. Here are some basic rules to follow:
   1. If its a feature, bugfix, or anything please only change code to what you specify.
-  2. Please keep PR titles easy to read and descriptive of changes, this will make them easier to merge :)
-  3. Pull requests _must_ be made against `develop` branch. Any other branch (unless specified by the maintainers) will get rejected.
+  2. Please keep PR titles easy to read and descriptive of changes.
+  3. Pull requests _must_ be made against `main` branch.
   4. Check for existing [issues](https://github.com/cesarferreira/monzo-cli/issues) first, before filing an issue.
   5. Have fun!
 
