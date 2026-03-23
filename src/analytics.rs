@@ -438,6 +438,43 @@ pub fn full_report(transactions: &[Transaction]) {
     detect_recurring(transactions);
 }
 
+/// Compute category totals (used internally by category_breakdown, exposed for testing)
+pub fn compute_category_totals(transactions: &[Transaction]) -> Vec<(String, i64)> {
+    let mut by_category: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    for tx in transactions {
+        if tx.is_expense() {
+            let cat = if tx.category.is_empty() {
+                "uncategorized".to_string()
+            } else {
+                tx.category.clone()
+            };
+            *by_category.entry(cat).or_default() += tx.amount.abs();
+        }
+    }
+    let mut sorted: Vec<_> = by_category.into_iter().collect();
+    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted
+}
+
+/// Compute top merchants (used internally, exposed for testing)
+pub fn compute_top_merchants(transactions: &[Transaction]) -> Vec<(String, i64, u32)> {
+    let mut by_merchant: HashMap<String, (i64, u32)> = HashMap::new();
+    for tx in transactions {
+        if tx.is_expense() {
+            let name = tx.display_name().to_string();
+            let entry = by_merchant.entry(name).or_default();
+            entry.0 += tx.amount.abs();
+            entry.1 += 1;
+        }
+    }
+    let mut sorted: Vec<_> = by_merchant
+        .into_iter()
+        .map(|(name, (total, count))| (name, total, count))
+        .collect();
+    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted
+}
+
 fn category_emoji(cat: &str) -> String {
     let emoji = match cat {
         "eating_out" => "\u{1f37d}\u{fe0f}  ",
@@ -453,4 +490,218 @@ fn category_emoji(cat: &str) -> String {
         _ => "\u{2753} ",
     };
     format!("{emoji}{cat}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::test_helpers::*;
+    use chrono::{Duration, Utc};
+
+    fn sample_transactions() -> Vec<Transaction> {
+        let now = Utc::now();
+        vec![
+            make_tx_with_merchant(-350, "Pret A Manger", "eating_out"),
+            make_tx_with_merchant(-1200, "Tesco", "groceries"),
+            make_tx_with_merchant(-250, "Pret A Manger", "eating_out"),
+            make_tx_with_merchant(-4500, "TfL", "transport"),
+            make_tx_with_merchant(-800, "Tesco", "groceries"),
+            make_tx(500, "Refund from Amazon", "shopping"), // positive = not expense
+        ]
+    }
+
+    // ── compute_category_totals ─────────────────────────────────────────
+
+    #[test]
+    fn category_totals_groups_correctly() {
+        let txs = sample_transactions();
+        let totals = compute_category_totals(&txs);
+
+        let transport = totals.iter().find(|(c, _)| c == "transport");
+        assert_eq!(transport.unwrap().1, 4500);
+
+        let eating = totals.iter().find(|(c, _)| c == "eating_out");
+        assert_eq!(eating.unwrap().1, 600); // 350 + 250
+
+        let groceries = totals.iter().find(|(c, _)| c == "groceries");
+        assert_eq!(groceries.unwrap().1, 2000); // 1200 + 800
+    }
+
+    #[test]
+    fn category_totals_excludes_positive_amounts() {
+        let txs = sample_transactions();
+        let totals = compute_category_totals(&txs);
+        // "shopping" refund should not appear (it's positive)
+        let shopping = totals.iter().find(|(c, _)| c == "shopping");
+        assert!(shopping.is_none());
+    }
+
+    #[test]
+    fn category_totals_sorted_descending() {
+        let txs = sample_transactions();
+        let totals = compute_category_totals(&txs);
+        for w in totals.windows(2) {
+            assert!(w[0].1 >= w[1].1);
+        }
+    }
+
+    #[test]
+    fn category_totals_empty_transactions() {
+        let totals = compute_category_totals(&[]);
+        assert!(totals.is_empty());
+    }
+
+    #[test]
+    fn category_totals_excludes_loads() {
+        let mut tx = make_tx(-1000, "Top Up", "general");
+        tx.is_load = true;
+        let totals = compute_category_totals(&[tx]);
+        assert!(totals.is_empty());
+    }
+
+    #[test]
+    fn category_totals_uncategorized() {
+        let tx = make_tx(-500, "Mystery", "");
+        let totals = compute_category_totals(&[tx]);
+        assert_eq!(totals[0].0, "uncategorized");
+        assert_eq!(totals[0].1, 500);
+    }
+
+    // ── compute_top_merchants ───────────────────────────────────────────
+
+    #[test]
+    fn top_merchants_groups_and_counts() {
+        let txs = sample_transactions();
+        let merchants = compute_top_merchants(&txs);
+
+        let pret = merchants.iter().find(|(n, _, _)| n == "Pret A Manger");
+        assert!(pret.is_some());
+        let (_, total, count) = pret.unwrap();
+        assert_eq!(*total, 600); // 350 + 250
+        assert_eq!(*count, 2);
+
+        let tesco = merchants.iter().find(|(n, _, _)| n == "Tesco");
+        let (_, total, count) = tesco.unwrap();
+        assert_eq!(*total, 2000); // 1200 + 800
+        assert_eq!(*count, 2);
+    }
+
+    #[test]
+    fn top_merchants_excludes_income() {
+        let txs = sample_transactions();
+        let merchants = compute_top_merchants(&txs);
+        let refund = merchants.iter().find(|(n, _, _)| n.contains("Amazon"));
+        assert!(refund.is_none());
+    }
+
+    #[test]
+    fn top_merchants_sorted_by_total() {
+        let txs = sample_transactions();
+        let merchants = compute_top_merchants(&txs);
+        for w in merchants.windows(2) {
+            assert!(w[0].1 >= w[1].1);
+        }
+    }
+
+    #[test]
+    fn top_merchants_empty() {
+        let merchants = compute_top_merchants(&[]);
+        assert!(merchants.is_empty());
+    }
+
+    // ── Smoke tests (ensure no panics) ──────────────────────────────────
+
+    #[test]
+    fn category_breakdown_no_panic() {
+        category_breakdown(&sample_transactions());
+    }
+
+    #[test]
+    fn category_breakdown_empty_no_panic() {
+        category_breakdown(&[]);
+    }
+
+    #[test]
+    fn top_merchants_display_no_panic() {
+        top_merchants(&sample_transactions(), 5);
+    }
+
+    #[test]
+    fn daily_spending_no_panic() {
+        daily_spending(&sample_transactions());
+    }
+
+    #[test]
+    fn daily_spending_empty_no_panic() {
+        daily_spending(&[]);
+    }
+
+    #[test]
+    fn weekly_spending_no_panic() {
+        weekly_spending(&sample_transactions());
+    }
+
+    #[test]
+    fn weekly_spending_empty_no_panic() {
+        weekly_spending(&[]);
+    }
+
+    #[test]
+    fn predict_monthly_no_panic() {
+        // Create transactions in the current month
+        let now = Utc::now();
+        let txs = vec![
+            make_tx_at(-500, "Coffee", "eating_out", now - Duration::days(1)),
+            make_tx_at(-3000, "Groceries", "groceries", now - Duration::days(3)),
+        ];
+        predict_monthly(&txs);
+    }
+
+    #[test]
+    fn predict_monthly_empty_no_panic() {
+        predict_monthly(&[]);
+    }
+
+    #[test]
+    fn detect_recurring_no_panic() {
+        detect_recurring(&sample_transactions());
+    }
+
+    #[test]
+    fn detect_recurring_empty_no_panic() {
+        detect_recurring(&[]);
+    }
+
+    #[test]
+    fn detect_recurring_finds_monthly() {
+        let now = Utc::now();
+        let txs: Vec<Transaction> = (0..4)
+            .map(|i| {
+                make_tx_at(
+                    -999,
+                    "Netflix",
+                    "entertainment",
+                    now - Duration::days(i * 30),
+                )
+            })
+            .collect();
+        // Should not panic; detection logic runs
+        detect_recurring(&txs);
+    }
+
+    #[test]
+    fn full_report_no_panic() {
+        let now = Utc::now();
+        let txs = vec![
+            make_tx_at(-500, "Coffee", "eating_out", now - Duration::days(1)),
+            make_tx_at(-3000, "Groceries", "groceries", now - Duration::days(3)),
+            make_tx_at(-1500, "Uber", "transport", now - Duration::days(5)),
+        ];
+        full_report(&txs);
+    }
+
+    #[test]
+    fn full_report_empty_no_panic() {
+        full_report(&[]);
+    }
 }

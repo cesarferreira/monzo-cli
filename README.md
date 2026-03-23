@@ -1,20 +1,127 @@
-# monzo-cli (Rust)
+# monzo-cli
 
-A modern, fast CLI for [Monzo Bank](https://monzo.com) — query balances, transactions, pots, get spending insights, and export data. Built in Rust for speed and reliability.
+[![CI](https://github.com/cesarferreira/monzo-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/cesarferreira/monzo-cli/actions/workflows/ci.yml)
 
-## Features
+> A modern CLI for Monzo Bank, rewritten in Rust
 
-- **Accounts** — list all your Monzo accounts
-- **Balance** — current balance, total balance, spend today, savings
-- **Transactions** — list, filter by category/amount/date, search by merchant
-- **Pots** — list pots with goals/progress, deposit, withdraw
-- **Search** — full-text search across transactions
-- **Insights** — spending analytics, category breakdown, top merchants, daily/weekly charts, recurring payment detection, monthly spend prediction with historical comparison
-- **Export** — CSV or JSON export for external analysis
-- **Webhooks** — register, list, and delete webhooks
-- **Feed Items** — push custom notifications to your Monzo app
-- **JSON mode** — `--json` flag on every command for agent/script consumption
-- **OAuth2** — full login flow with browser redirect, token refresh support
+## Usage
+
+### Balance
+
+```bash
+$ monzo-cli balance
+
+  ┌────────────────────┬───────────┐
+  │                    │ Amount    │
+  ├────────────────────┼───────────┤
+  │ Balance            │   £490.00 │
+  │ Total Balance      │ £1,250.00 │
+  │ Spent Today        │   -£10.50 │
+  │ Including Savings  │ £3,500.00 │
+  └────────────────────┴───────────┘
+```
+
+### Transactions
+
+```bash
+$ monzo-cli transactions --since 7d
+
+  ┌──────────────────┬────────────────────┬────────────┬──────────┬───────────┐
+  │ Date             │ Description        │ Category   │   Amount │   Balance │
+  ├──────────────────┼────────────────────┼────────────┼──────────┼───────────┤
+  │ 2026-03-23 09:15 │ Pret A Manger      │ eating_out │   -£3.50 │   £490.00 │
+  │ 2026-03-22 18:30 │ Tesco              │ groceries  │  -£45.20 │   £493.50 │
+  │ 2026-03-22 08:00 │ TfL                │ transport  │   -£2.80 │   £538.70 │
+  │ 2026-03-21 20:15 │ Netflix            │ bills      │   -£9.99 │   £541.50 │
+  └──────────────────┴────────────────────┴────────────┴──────────┴───────────┘
+  4 transactions
+```
+
+### Pots
+
+```bash
+$ monzo-cli pots
+
+  ┌──────────────────┬───────────┬─────────────────┬──────────┬──────────┐
+  │ Name             │   Balance │            Goal │ Type     │ Round-up │
+  ├──────────────────┼───────────┼─────────────────┼──────────┼──────────┤
+  │ Holiday Fund     │   £500.00 │ £1,000.00 (50%) │ -        │ -        │
+  │ Emergency        │ £1,200.00 │               - │ -        │ -        │
+  │ Coin Jar         │    £47.30 │               - │ -        │ Yes      │
+  └──────────────────┴───────────┴─────────────────┴──────────┴──────────┘
+  3 pots | Total: £1,747.30
+```
+
+### Spending Insights
+
+```bash
+$ monzo-cli insights categories --since 30d
+
+  Spending by Category
+  ┌──────────────────────┬──────────┬────────────┬─────────────────┐
+  │ Category             │    Spent │ % of Total │ Bar             │
+  ├──────────────────────┼──────────┼────────────┼─────────────────┤
+  │ groceries            │ -£245.00 │        35% │ ████████████████│
+  │ eating_out           │ -£180.50 │        26% │ █████████████   │
+  │ transport            │  -£95.00 │        14% │ ███████         │
+  │ bills                │  -£85.99 │        12% │ ██████          │
+  │ entertainment        │  -£45.00 │         6% │ ███             │
+  └──────────────────────┴──────────┴────────────┴─────────────────┘
+  Total: -£651.49
+```
+
+### Search
+
+```bash
+$ monzo-cli search "coffee" --since 90d
+$ monzo-cli search "Amazon" -n 50
+```
+
+### Export
+
+```bash
+$ monzo-cli export -f csv -o spending.csv --since 90d
+$ monzo-cli export -f json -o data.json --since 1y
+```
+
+### JSON Mode
+
+Every command supports `--json` for structured output, useful for scripting or piping into `jq`:
+
+```bash
+$ monzo-cli --json balance | jq '.balance / 100'
+$ monzo-cli --json tx --since 30d -c eating_out
+$ monzo-cli --json pots
+```
+
+## All Commands
+
+| Command | Description |
+|---|---|
+| `balance` | Show account balance, spend today, savings |
+| `transactions` | List transactions with filters (category, amount, date, search) |
+| `tx` | Alias for `transactions` |
+| `transaction <id>` | Show full transaction detail |
+| `annotate <id> <key> <value>` | Add metadata to a transaction |
+| `pots` | List pots with balances and goals |
+| `pots deposit <name> <amount>` | Deposit into a pot |
+| `pots withdraw <name> <amount>` | Withdraw from a pot |
+| `search <query>` | Full-text search across transactions |
+| `insights` | Full spending report |
+| `insights categories` | Spending breakdown by category |
+| `insights merchants` | Top merchants by total spend |
+| `insights daily` | Daily spending chart |
+| `insights weekly` | Weekly spending totals |
+| `insights predict` | Monthly projection with historical comparison |
+| `insights recurring` | Detect subscriptions and recurring payments |
+| `export` | Export transactions to CSV or JSON |
+| `webhooks` | List, add, or remove webhooks |
+| `feed <title>` | Push a notification to your Monzo app |
+| `accounts` | List all accounts |
+| `auth login` | OAuth2 login (opens browser) |
+| `auth refresh` | Refresh expired token |
+| `auth set-token <token>` | Quick setup with playground token |
+| `auth status` | Check if token is valid |
 
 ## Install
 
@@ -29,9 +136,9 @@ cargo build --release
 # Binary at target/release/monzo-cli
 ```
 
-## Authentication
+## Setup
 
-### Option 1: OAuth2 Flow (recommended for confidential clients)
+### Option 1: OAuth2 (recommended)
 
 1. Create an OAuth client at [developers.monzo.com](https://developers.monzo.com)
 2. Set the redirect URL to `http://localhost:6789/callback`
@@ -41,121 +148,28 @@ cargo build --release
 monzo-cli auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
 ```
 
-This opens your browser, handles the callback, exchanges the code for tokens, and auto-detects your account. You'll need to approve the login in the Monzo app.
+### Option 2: Playground token (quick start)
 
-### Option 2: Developer Playground Token (quick setup)
-
-1. Get a token from the [Monzo API Playground](https://developers.monzo.com/api/playground)
-2. Run:
+Get a token from the [Monzo API Playground](https://developers.monzo.com/api/playground):
 
 ```bash
 monzo-cli auth set-token YOUR_ACCESS_TOKEN
 ```
 
-Note: playground tokens expire after ~6 hours.
+## Caveats
 
-### Token Refresh
-
-```bash
-monzo-cli auth refresh   # Refresh expired token (confidential clients only)
-monzo-cli auth status    # Check if your token is valid
-```
-
-Environment variables `MONZO_CLIENT_ID` and `MONZO_CLIENT_SECRET` are also supported.
-
-## Usage
-
-```bash
-# Basics
-monzo-cli balance
-monzo-cli accounts
-monzo-cli config                    # Show config file location
-
-# Transactions
-monzo-cli transactions              # Last 30 transactions
-monzo-cli tx -n 50                  # Last 50 (alias: tx)
-monzo-cli tx --since 7d             # Last 7 days
-monzo-cli tx --since 2024-01-01     # Since a specific date
-monzo-cli tx -c eating_out          # Filter by category
-monzo-cli tx -q "Tesco"             # Search by merchant
-monzo-cli tx --min 50 --max 200     # Amount range (in pounds)
-monzo-cli tx --since 30d -c groceries --json  # Combine filters + JSON
-
-# Transaction detail
-monzo-cli transaction tx_00009abc...
-monzo-cli annotate tx_00009abc... notes "Birthday dinner"
-
-# Search
-monzo-cli search "coffee" --since 90d
-monzo-cli search "Amazon" -n 50
-
-# Pots
-monzo-cli pots                      # List all pots with balances & goals
-monzo-cli pots deposit "Holiday" 50.00
-monzo-cli pots withdraw "Emergency" 100.00
-
-# Insights & Analytics
-monzo-cli insights                  # Full report
-monzo-cli insights categories       # Spending by category with bar chart
-monzo-cli insights merchants        # Top merchants by total spend
-monzo-cli insights daily            # Daily spending chart
-monzo-cli insights weekly           # Weekly spending totals
-monzo-cli insights predict          # Monthly projection + historical comparison
-monzo-cli insights recurring        # Detect subscriptions & recurring payments
-monzo-cli insights --since 90d      # Insights over custom period
-
-# Export
-monzo-cli export -f csv -o spending.csv --since 90d
-monzo-cli export -f json -o data.json --since 1y
-
-# Webhooks
-monzo-cli webhooks                  # List webhooks
-monzo-cli webhooks add https://example.com/hook
-monzo-cli webhooks remove whk_...
-
-# Feed items (push to Monzo app)
-monzo-cli feed "Hello from CLI" --body "This is a test notification"
-
-# JSON output (for agents/scripts)
-monzo-cli --json balance
-monzo-cli --json pots
-monzo-cli --json tx --since 30d
-```
-
-## Agent / Script Integration
-
-Every command supports `--json` for structured output, making it easy to pipe into `jq`, feed to an AI agent, or integrate with automation:
-
-```bash
-# Get balance as JSON
-monzo-cli --json balance | jq '.balance / 100'
-
-# Export last month's transactions for analysis
-monzo-cli --json tx --since 30d > /tmp/transactions.json
-
-# Search and process results
-monzo-cli --json search "Uber" | jq '[.[] | .amount] | add / 100'
-```
-
-## Categories
-
-Monzo uses these transaction categories:
-`general`, `eating_out`, `groceries`, `transport`, `cash`, `bills`, `entertainment`, `shopping`, `holidays`, `expenses`
-
-## Config
-
-Config is stored at:
-- **macOS**: `~/Library/Application Support/com.cesarferreira.monzo-cli/config.toml`
-- **Linux**: `~/.config/monzo-cli/config.toml`
-
-## API Notes
-
-- Access tokens expire after ~6 hours
-- After initial auth, you have a 5-minute window to fetch full transaction history (SCA restriction)
-- The API defaults to 30 transactions per request (max 100)
+- Access tokens expire after ~6 hours. Use `monzo-cli auth refresh` to renew (confidential clients only)
+- After initial auth, you have a 5-minute window to fetch full transaction history (Monzo SCA restriction)
 - Pots with "added security" cannot be withdrawn from via the API
-- Rate limiting returns HTTP 429 — the CLI will tell you to retry
 
-## License
+## Contributing
 
-MIT
+I welcome and encourage all pull requests. Here are some basic rules to follow:
+  1. If its a feature, bugfix, or anything please only change code to what you specify.
+  2. Please keep PR titles easy to read and descriptive of changes.
+  3. Pull requests _must_ be made against `main` branch.
+  4. Check for existing [issues](https://github.com/cesarferreira/monzo-cli/issues) first, before filing an issue.
+  5. Have fun!
+
+### Created & Maintained By
+[Cesar Ferreira](https://github.com/cesarferreira) ([@cesarmcferreira](https://www.twitter.com/cesarmcferreira))

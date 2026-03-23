@@ -716,3 +716,115 @@ fn parse_since(s: &str) -> Result<String> {
     let since = Utc::now() - duration;
     Ok(since.to_rfc3339())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::test_helpers::*;
+
+    // ── parse_since ─────────────────────────────────────────────────────
+
+    #[test]
+    fn parse_since_date_format() {
+        let result = parse_since("2024-06-15").unwrap();
+        assert!(result.contains("2024-06-15"));
+    }
+
+    #[test]
+    fn parse_since_days() {
+        let result = parse_since("7d").unwrap();
+        // Should be a valid RFC3339 timestamp
+        let parsed = chrono::DateTime::parse_from_rfc3339(&result);
+        assert!(parsed.is_ok());
+        // Should be roughly 7 days ago
+        let dt = parsed.unwrap();
+        let diff = Utc::now().signed_duration_since(dt);
+        assert!((diff.num_days() - 7).abs() <= 1);
+    }
+
+    #[test]
+    fn parse_since_weeks() {
+        let result = parse_since("2w").unwrap();
+        let parsed = chrono::DateTime::parse_from_rfc3339(&result).unwrap();
+        let diff = Utc::now().signed_duration_since(parsed);
+        assert!((diff.num_days() - 14).abs() <= 1);
+    }
+
+    #[test]
+    fn parse_since_months() {
+        let result = parse_since("3m").unwrap();
+        let parsed = chrono::DateTime::parse_from_rfc3339(&result).unwrap();
+        let diff = Utc::now().signed_duration_since(parsed);
+        assert!((diff.num_days() - 90).abs() <= 1);
+    }
+
+    #[test]
+    fn parse_since_year() {
+        let result = parse_since("1y").unwrap();
+        let parsed = chrono::DateTime::parse_from_rfc3339(&result).unwrap();
+        let diff = Utc::now().signed_duration_since(parsed);
+        assert!((diff.num_days() - 365).abs() <= 1);
+    }
+
+    #[test]
+    fn parse_since_invalid_unit() {
+        assert!(parse_since("5x").is_err());
+    }
+
+    #[test]
+    fn parse_since_invalid_number() {
+        assert!(parse_since("abcd").is_err());
+    }
+
+    #[test]
+    fn parse_since_invalid_date() {
+        assert!(parse_since("not-a-date").is_err());
+    }
+
+    // ── find_pot ────────────────────────────────────────────────────────
+
+    #[test]
+    fn find_pot_by_exact_id() {
+        let pots = vec![make_pot("Holiday", 5000), make_pot("Emergency", 10000)];
+        let found = find_pot(&pots, &pots[1].id).unwrap();
+        assert_eq!(found.name, "Emergency");
+    }
+
+    #[test]
+    fn find_pot_by_name_case_insensitive() {
+        let pots = vec![make_pot("Holiday Fund", 5000), make_pot("Emergency", 10000)];
+        let found = find_pot(&pots, "holiday").unwrap();
+        assert_eq!(found.name, "Holiday Fund");
+    }
+
+    #[test]
+    fn find_pot_by_partial_name() {
+        let pots = vec![make_pot("Holiday Fund", 5000), make_pot("Emergency", 10000)];
+        let found = find_pot(&pots, "Emerg").unwrap();
+        assert_eq!(found.name, "Emergency");
+    }
+
+    #[test]
+    fn find_pot_no_match() {
+        let pots = vec![make_pot("Holiday", 5000)];
+        assert!(find_pot(&pots, "Savings").is_err());
+    }
+
+    #[test]
+    fn find_pot_ambiguous_match() {
+        let pots = vec![
+            make_pot("Holiday Fund", 5000),
+            make_pot("Holiday Savings", 3000),
+        ];
+        let result = find_pot(&pots, "Holiday");
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Multiple pots"));
+    }
+
+    #[test]
+    fn find_pot_empty_list() {
+        let pots: Vec<models::Pot> = vec![];
+        assert!(find_pot(&pots, "anything").is_err());
+    }
+}
