@@ -5,6 +5,14 @@ edition = "2021"
 authors = ["Cesar Ferreira"]
 description = "A modern CLI for Monzo Bank - query balances, transactions, pots, and get spending insights"
 license = "MIT"
+repository = "https://github.com/cesarferreira/monzo-cli"
+homepage = "https://github.com/cesarferreira/monzo-cli"
+keywords = ["monzo", "banking", "cli", "finance"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "monzo"
+path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4.5", features = ["derive", "env"] }

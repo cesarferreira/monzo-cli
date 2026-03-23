@@ -14,8 +14,41 @@ use client::MonzoClient;
 use config::Config;
 use models::format_money;
 
+/// Load config and auto-refresh the token if expired (and refresh credentials are available).
+/// Returns an up-to-date (Config, MonzoClient) pair ready to use.
+async fn authenticated() -> Result<(Config, MonzoClient)> {
+    let mut config = Config::load()?;
+
+    if config.is_token_expired() {
+        let can_refresh = config.client_id.as_deref().is_some_and(|s| !s.is_empty())
+            && config.client_secret.as_deref().is_some_and(|s| !s.is_empty())
+            && config.refresh_token.as_deref().is_some_and(|s| !s.is_empty());
+
+        if can_refresh {
+            eprintln!("{}", "Token expired, refreshing automatically...".dimmed());
+            let token = MonzoClient::refresh_token(
+                config.client_id.as_deref().unwrap(),
+                config.client_secret.as_deref().unwrap(),
+                config.refresh_token.as_deref().unwrap(),
+            )
+            .await?;
+
+            config.access_token = Some(token.access_token);
+            config.refresh_token = token.refresh_token;
+            if let Some(expires_in) = token.expires_in {
+                config.token_expires_at = Some(Utc::now().timestamp() + expires_in);
+            }
+            config.save()?;
+            eprintln!("{}", "Token refreshed.".green().dimmed());
+        }
+    }
+
+    let client = MonzoClient::new(&config)?;
+    Ok((config, client))
+}
+
 #[derive(Parser)]
-#[command(name = "monzo-cli", version, about = "Modern CLI for Monzo Bank")]
+#[command(name = "monzo", version, about = "Modern CLI for Monzo Bank")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -327,8 +360,7 @@ fn handle_config() -> Result<()> {
 // ── Accounts ────────────────────────────────────────────────────────────────
 
 async fn handle_accounts(json: bool) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let accounts = client.accounts(None).await?;
 
     if json {
@@ -338,7 +370,7 @@ async fn handle_accounts(json: bool) -> Result<()> {
         if config.account_id.is_none() && !accounts.is_empty() {
             println!(
                 "\n{}",
-                "Tip: set your default account with `monzo-cli auth set-token <token> --account-id <id>`"
+                "Tip: set your default account with `monzo auth set-token <token> --account-id <id>`"
                     .dimmed()
             );
         }
@@ -349,8 +381,7 @@ async fn handle_accounts(json: bool) -> Result<()> {
 // ── Balance ─────────────────────────────────────────────────────────────────
 
 async fn handle_balance(json: bool) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
     let balance = client.balance(account_id).await?;
 
@@ -374,8 +405,7 @@ async fn handle_transactions(
     min: Option<f64>,
     max: Option<f64>,
 ) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     let since_str = since.as_deref().map(|s| parse_since(s)).transpose()?;
@@ -420,8 +450,7 @@ async fn handle_transactions(
 }
 
 async fn handle_transaction_detail(json: bool, id: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (_config, client) = authenticated().await?;
     let tx = client.transaction(id).await?;
 
     if json {
@@ -433,8 +462,7 @@ async fn handle_transaction_detail(json: bool, id: &str) -> Result<()> {
 }
 
 async fn handle_annotate(id: &str, key: &str, value: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (_config, client) = authenticated().await?;
     let tx = client.annotate_transaction(id, key, value).await?;
     println!("Transaction annotated.");
     display::print_transaction_detail(&tx);
@@ -444,8 +472,7 @@ async fn handle_annotate(id: &str, key: &str, value: &str) -> Result<()> {
 // ── Pots ────────────────────────────────────────────────────────────────────
 
 async fn handle_pots(json: bool, action: Option<PotAction>) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     match action.unwrap_or(PotAction::List) {
@@ -527,8 +554,7 @@ fn find_pot<'a>(pots: &'a [models::Pot], name_or_id: &str) -> Result<&'a models:
 // ── Search ──────────────────────────────────────────────────────────────────
 
 async fn handle_search(json: bool, query: &str, limit: u32, since: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     let since_str = parse_since(since)?;
@@ -569,8 +595,7 @@ async fn handle_search(json: bool, query: &str, limit: u32, since: &str) -> Resu
 // ── Insights ────────────────────────────────────────────────────────────────
 
 async fn handle_insights(action: Option<InsightAction>, since: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     let since_str = parse_since(since)?;
@@ -598,8 +623,7 @@ async fn handle_insights(action: Option<InsightAction>, since: &str) -> Result<(
 // ── Webhooks ────────────────────────────────────────────────────────────────
 
 async fn handle_webhooks(json: bool, action: Option<WebhookAction>) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     match action.unwrap_or(WebhookAction::List) {
@@ -626,8 +650,7 @@ async fn handle_webhooks(json: bool, action: Option<WebhookAction>) -> Result<()
 // ── Feed ────────────────────────────────────────────────────────────────────
 
 async fn handle_feed(title: &str, body: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     client
@@ -640,8 +663,7 @@ async fn handle_feed(title: &str, body: &str) -> Result<()> {
 // ── Export ───────────────────────────────────────────────────────────────────
 
 async fn handle_export(format: &str, output: &str, since: &str) -> Result<()> {
-    let config = Config::load()?;
-    let client = MonzoClient::new(&config)?;
+    let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
     let since_str = parse_since(since)?;

@@ -9,7 +9,7 @@
 ### Balance
 
 ```bash
-$ monzo-cli balance
+$ monzo balance
 
   ┌────────────────────┬───────────┐
   │                    │ Amount    │
@@ -24,7 +24,7 @@ $ monzo-cli balance
 ### Transactions
 
 ```bash
-$ monzo-cli transactions --since 7d
+$ monzo transactions --since 7d
 
   ┌──────────────────┬────────────────────┬────────────┬──────────┬───────────┐
   │ Date             │ Description        │ Category   │   Amount │   Balance │
@@ -40,7 +40,7 @@ $ monzo-cli transactions --since 7d
 ### Pots
 
 ```bash
-$ monzo-cli pots
+$ monzo pots
 
   ┌──────────────────┬───────────┬─────────────────┬──────────┬──────────┐
   │ Name             │   Balance │            Goal │ Type     │ Round-up │
@@ -55,7 +55,7 @@ $ monzo-cli pots
 ### Spending Insights
 
 ```bash
-$ monzo-cli insights categories --since 30d
+$ monzo insights categories --since 30d
 
   Spending by Category
   ┌──────────────────────┬──────────┬────────────┬─────────────────┐
@@ -73,15 +73,15 @@ $ monzo-cli insights categories --since 30d
 ### Search
 
 ```bash
-$ monzo-cli search "coffee" --since 90d
-$ monzo-cli search "Amazon" -n 50
+$ monzo search "coffee" --since 90d
+$ monzo search "Amazon" -n 50
 ```
 
 ### Export
 
 ```bash
-$ monzo-cli export -f csv -o spending.csv --since 90d
-$ monzo-cli export -f json -o data.json --since 1y
+$ monzo export -f csv -o spending.csv --since 90d
+$ monzo export -f json -o data.json --since 1y
 ```
 
 ### JSON Mode
@@ -89,9 +89,9 @@ $ monzo-cli export -f json -o data.json --since 1y
 Every command supports `--json` for structured output, useful for scripting or piping into `jq`:
 
 ```bash
-$ monzo-cli --json balance | jq '.balance / 100'
-$ monzo-cli --json tx --since 30d -c eating_out
-$ monzo-cli --json pots
+$ monzo --json balance | jq '.balance / 100'
+$ monzo --json tx --since 30d -c eating_out
+$ monzo --json pots
 ```
 
 ## All Commands
@@ -126,14 +126,20 @@ $ monzo-cli --json pots
 ## Install
 
 ```bash
-cargo install --path .
+cargo install monzo-cli
+```
+
+Or via [cargo-binstall](https://github.com/cargo-bins/cargo-binstall):
+
+```bash
+cargo binstall monzo-cli
 ```
 
 Or build from source:
 
 ```bash
 cargo build --release
-# Binary at target/release/monzo-cli
+# Binary at target/release/monzo
 ```
 
 ## Setup
@@ -145,7 +151,7 @@ cargo build --release
 3. Run:
 
 ```bash
-monzo-cli auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
+monzo auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
 ```
 
 ### Option 2: Playground token (quick start)
@@ -153,12 +159,12 @@ monzo-cli auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECR
 Get a token from the [Monzo API Playground](https://developers.monzo.com/api/playground):
 
 ```bash
-monzo-cli auth set-token YOUR_ACCESS_TOKEN
+monzo auth set-token YOUR_ACCESS_TOKEN
 ```
 
 ## Caveats
 
-- Access tokens expire after ~6 hours. Use `monzo-cli auth refresh` to renew (confidential clients only)
+- Access tokens expire after ~6 hours. If you logged in via OAuth2, **tokens are refreshed automatically** when they expire - no manual action needed
 - After initial auth, you have a 5-minute window to fetch full transaction history (Monzo SCA restriction)
 - Pots with "added security" cannot be withdrawn from via the API
 

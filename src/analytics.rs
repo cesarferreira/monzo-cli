@@ -439,6 +439,7 @@ pub fn full_report(transactions: &[Transaction]) {
 }
 
 /// Compute category totals (used internally by category_breakdown, exposed for testing)
+#[allow(dead_code)]
 pub fn compute_category_totals(transactions: &[Transaction]) -> Vec<(String, i64)> {
     let mut by_category: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
     for tx in transactions {
@@ -457,6 +458,7 @@ pub fn compute_category_totals(transactions: &[Transaction]) -> Vec<(String, i64
 }
 
 /// Compute top merchants (used internally, exposed for testing)
+#[allow(dead_code)]
 pub fn compute_top_merchants(transactions: &[Transaction]) -> Vec<(String, i64, u32)> {
     let mut by_merchant: HashMap<String, (i64, u32)> = HashMap::new();
     for tx in transactions {
