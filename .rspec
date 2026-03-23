@@ -1,5 +1,0 @@
---require spec_helper
---tty
---color
---format documentation
---format html -o "tmp/rspec_result.html"
