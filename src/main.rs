@@ -143,12 +143,13 @@ enum Commands {
     },
 
     /// Spending insights and analytics
+    #[command(args_conflicts_with_subcommands = false)]
     Insights {
         #[command(subcommand)]
         action: Option<InsightAction>,
 
         /// Time period (e.g. "30d", "3m", "1y")
-        #[arg(short, long, default_value = "30d")]
+        #[arg(short, long, default_value = "30d", global = true)]
         since: String,
     },
 

@@ -147,6 +147,16 @@ cargo build --release
 
 ## Setup
 
+> **Monzo app approval is mandatory for OAuth**  
+> After you run `monzo auth login` and sign in in the browser, **open the Monzo app on your phone and tap to approve the login request** as soon as it appears. Until you **APPROVE** that prompt, Monzo may not issue a usable access token: the CLI will not work properly, and your session / connection often **will not show up or update correctly** on the [developer portal](https://developers.monzo.com/apps/home). Do not skip this step — finish the app approval **before** expecting any OAuth token or API access to work.
+
+### OAuth login: approve in the Monzo app (read this)
+
+1. **`monzo auth login`** opens the browser; you log in to Monzo on the web.
+2. **Immediately check your phone** — Monzo sends a **login approval** request to the app.
+3. **Tap approve in the Monzo app** while the terminal is still waiting. If you ignore or delay this, token exchange can fail or you can end up with a half-working setup (missing account auto-detection, errors on `monzo accounts`, nothing visible as expected on the website).
+4. Only after approval does the CLI save tokens and continue (e.g. auto-picking a default account).
+
 ### Option 1: OAuth2 (recommended)
 
 1. Create an OAuth client in the [Monzo developer apps console](https://developers.monzo.com/apps/home) (or run `monzo developers` to open it in your browser)
@@ -156,6 +166,8 @@ cargo build --release
 ```bash
 monzo auth login --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
 ```
+
+4. **As soon as the browser flow asks you to**, complete login and **approve the request in the Monzo app** (see the callout and section above). Without that approval, OAuth does not fully complete and things may not work or appear on the site.
 
 ### Option 2: Playground token (quick start)
 
@@ -188,6 +200,7 @@ You can also set `account_id` in your config file (`monzo config` shows the path
 
 ## Caveats
 
+- **OAuth:** you must **approve the login in the Monzo mobile app** during `monzo auth login`; otherwise tokens and the developer site may not behave as expected (see **Setup** at the top)
 - Access tokens expire after ~6 hours. If you logged in via OAuth2, **tokens are refreshed automatically** when they expire - no manual action needed
 - After initial auth, you have a 5-minute window to fetch full transaction history (Monzo SCA restriction)
 - Pots with "added security" cannot be withdrawn from via the API
