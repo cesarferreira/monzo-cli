@@ -81,12 +81,12 @@ enum Commands {
         #[arg(short = 'n', long, default_value = "30")]
         limit: u32,
 
-        /// Show transactions since (YYYY-MM-DD or duration like "7d", "1m")
-        #[arg(short, long)]
+        /// Lower bound: YYYY-MM-DD or duration (e.g. 7d, 1m). Alias: --from
+        #[arg(short, long, visible_alias = "from")]
         since: Option<String>,
 
-        /// Show transactions before (YYYY-MM-DD)
-        #[arg(short, long)]
+        /// Upper bound: inclusive calendar day YYYY-MM-DD (converted for the API). Alias: --to
+        #[arg(short, long, visible_alias = "to")]
         before: Option<String>,
 
         /// Filter by category (eating_out, groceries, transport, etc.)
@@ -137,9 +137,13 @@ enum Commands {
         #[arg(short = 'n', long, default_value = "20")]
         limit: u32,
 
-        /// Search window (e.g. "30d", "3m", "1y")
-        #[arg(short, long, default_value = "90d")]
-        since: String,
+        /// Lower bound: YYYY-MM-DD or duration (default 90d). Alias: --from
+        #[arg(short, long, visible_alias = "from")]
+        since: Option<String>,
+
+        /// Upper bound: inclusive YYYY-MM-DD. Alias: --to
+        #[arg(long, visible_alias = "to")]
+        before: Option<String>,
     },
 
     /// Spending insights and analytics
@@ -148,9 +152,13 @@ enum Commands {
         #[command(subcommand)]
         action: Option<InsightAction>,
 
-        /// Time period (e.g. "30d", "3m", "1y")
-        #[arg(short, long, default_value = "30d", global = true)]
-        since: String,
+        /// Lower bound: YYYY-MM-DD or duration (default 30d). Alias: --from
+        #[arg(short, long, global = true, visible_alias = "from")]
+        since: Option<String>,
+
+        /// Upper bound: inclusive YYYY-MM-DD. Alias: --to
+        #[arg(long, global = true, visible_alias = "to")]
+        before: Option<String>,
     },
 
     /// Manage webhooks
@@ -178,9 +186,13 @@ enum Commands {
         #[arg(short, long)]
         output: String,
 
-        /// Export window (e.g. "30d", "3m", "1y")
-        #[arg(short, long, default_value = "90d")]
-        since: String,
+        /// Lower bound: YYYY-MM-DD or duration (default 90d). Alias: --from
+        #[arg(short, long, visible_alias = "from")]
+        since: Option<String>,
+
+        /// Upper bound: inclusive YYYY-MM-DD. Alias: --to
+        #[arg(long, visible_alias = "to")]
+        before: Option<String>,
     },
 
     /// Show where your config is stored
@@ -306,17 +318,25 @@ async fn run() -> Result<()> {
         Commands::Transaction { id } => handle_transaction_detail(cli.json, &id).await,
         Commands::Annotate { id, key, value } => handle_annotate(&id, &key, &value).await,
         Commands::Pots { action } => handle_pots(cli.json, action).await,
-        Commands::Search { query, limit, since } => {
-            handle_search(cli.json, &query, limit, &since).await
-        }
-        Commands::Insights { action, since } => handle_insights(action, &since).await,
+        Commands::Search {
+            query,
+            limit,
+            since,
+            before,
+        } => handle_search(cli.json, &query, limit, since.as_deref(), before.as_deref()).await,
+        Commands::Insights {
+            action,
+            since,
+            before,
+        } => handle_insights(action, since.as_deref(), before.as_deref()).await,
         Commands::Webhooks { action } => handle_webhooks(cli.json, action).await,
         Commands::Feed { title, body } => handle_feed(&title, &body).await,
         Commands::Export {
             format,
             output,
             since,
-        } => handle_export(&format, &output, &since).await,
+            before,
+        } => handle_export(&format, &output, since.as_deref(), before.as_deref()).await,
         Commands::Developers => handle_developers(),
     }
 }
@@ -430,7 +450,10 @@ async fn handle_transactions(
     let account_id = config.account_id()?;
 
     let since_str = since.as_deref().map(|s| parse_since(s)).transpose()?;
-    let before_str = before.clone();
+    let before_str = before
+        .as_deref()
+        .map(parse_before_query_param)
+        .transpose()?;
 
     let mut txs = client
         .transactions(
@@ -574,13 +597,24 @@ fn find_pot<'a>(pots: &'a [models::Pot], name_or_id: &str) -> Result<&'a models:
 
 // ── Search ──────────────────────────────────────────────────────────────────
 
-async fn handle_search(json: bool, query: &str, limit: u32, since: &str) -> Result<()> {
+async fn handle_search(
+    json: bool,
+    query: &str,
+    limit: u32,
+    since: Option<&str>,
+    before: Option<&str>,
+) -> Result<()> {
     let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
-    let since_str = parse_since(since)?;
+    if before.is_some() && since.is_none() {
+        anyhow::bail!("--to/--before requires --since/--from (lower bound).");
+    }
+
+    let since_str = parse_since(since.unwrap_or("90d"))?;
+    let before_str = before.map(parse_before_query_param).transpose()?;
     let txs = client
-        .transactions(account_id, Some(&since_str), None, Some(100))
+        .all_transactions(account_id, Some(&since_str), before_str.as_deref())
         .await?;
 
     let q_lower = query.to_lowercase();
@@ -615,13 +649,22 @@ async fn handle_search(json: bool, query: &str, limit: u32, since: &str) -> Resu
 
 // ── Insights ────────────────────────────────────────────────────────────────
 
-async fn handle_insights(action: Option<InsightAction>, since: &str) -> Result<()> {
+async fn handle_insights(
+    action: Option<InsightAction>,
+    since: Option<&str>,
+    before: Option<&str>,
+) -> Result<()> {
     let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
-    let since_str = parse_since(since)?;
+    if before.is_some() && since.is_none() {
+        anyhow::bail!("--to/--before requires --since/--from (lower bound).");
+    }
+
+    let since_str = parse_since(since.unwrap_or("30d"))?;
+    let before_str = before.map(parse_before_query_param).transpose()?;
     let txs = client
-        .all_transactions(account_id, Some(&since_str), None)
+        .all_transactions(account_id, Some(&since_str), before_str.as_deref())
         .await?;
 
     if txs.is_empty() {
@@ -683,13 +726,23 @@ async fn handle_feed(title: &str, body: &str) -> Result<()> {
 
 // ── Export ───────────────────────────────────────────────────────────────────
 
-async fn handle_export(format: &str, output: &str, since: &str) -> Result<()> {
+async fn handle_export(
+    format: &str,
+    output: &str,
+    since: Option<&str>,
+    before: Option<&str>,
+) -> Result<()> {
     let (config, client) = authenticated().await?;
     let account_id = config.account_id()?;
 
-    let since_str = parse_since(since)?;
+    if before.is_some() && since.is_none() {
+        anyhow::bail!("--to/--before requires --since/--from (lower bound).");
+    }
+
+    let since_str = parse_since(since.unwrap_or("90d"))?;
+    let before_str = before.map(parse_before_query_param).transpose()?;
     let txs = client
-        .all_transactions(account_id, Some(&since_str), None)
+        .all_transactions(account_id, Some(&since_str), before_str.as_deref())
         .await?;
 
     match format {
@@ -730,6 +783,31 @@ async fn handle_export(format: &str, output: &str, since: &str) -> Result<()> {
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
+
+/// Inclusive calendar end date (YYYY-MM-DD) → RFC3339 instant for Monzo's `before` (exclusive).
+fn parse_to_inclusive_end_date(s: &str) -> Result<String> {
+    let date = chrono::NaiveDate::parse_from_str(s.trim(), "%Y-%m-%d")
+        .with_context(|| format!("Invalid date (expected YYYY-MM-DD): {s}"))?;
+    let next = date
+        .succ_opt()
+        .with_context(|| format!("Invalid or out-of-range date: {s}"))?;
+    let dt = next
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .and_utc();
+    Ok(dt.to_rfc3339())
+}
+
+/// `before` / `--to`: plain `YYYY-MM-DD` is treated as an inclusive last day; anything else is sent as-is (RFC3339 or Monzo transaction id).
+fn parse_before_query_param(s: &str) -> Result<String> {
+    let t = s.trim();
+    if t.len() == 10 && t.as_bytes()[4] == b'-' && t.as_bytes()[7] == b'-' {
+        if chrono::NaiveDate::parse_from_str(t, "%Y-%m-%d").is_ok() {
+            return parse_to_inclusive_end_date(t);
+        }
+    }
+    Ok(t.to_string())
+}
 
 /// Parse a "since" value that can be a date (YYYY-MM-DD) or a duration (7d, 2w, 3m, 1y)
 fn parse_since(s: &str) -> Result<String> {
@@ -822,6 +900,26 @@ mod tests {
     #[test]
     fn parse_since_invalid_date() {
         assert!(parse_since("not-a-date").is_err());
+    }
+
+    // ── parse_to_inclusive_end_date / parse_before_query_param ──────────
+
+    #[test]
+    fn parse_to_inclusive_end_january() {
+        let end = parse_to_inclusive_end_date("2024-01-31").unwrap();
+        assert!(end.starts_with("2024-02-01"));
+    }
+
+    #[test]
+    fn parse_before_plain_date_is_inclusive_end() {
+        let b = parse_before_query_param("2024-01-31").unwrap();
+        assert!(b.contains("2024-02-01"));
+    }
+
+    #[test]
+    fn parse_before_passes_through_rfc3339() {
+        let raw = "2024-01-31T23:59:59Z";
+        assert_eq!(parse_before_query_param(raw).unwrap(), raw);
     }
 
     // ── find_pot ────────────────────────────────────────────────────────

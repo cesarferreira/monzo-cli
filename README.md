@@ -25,6 +25,8 @@ $ monzo balance
 
 ```bash
 $ monzo transactions --since 7d
+# Calendar range (--from / --to are aliases for --since / --before; --to is inclusive)
+$ monzo transactions --from 2024-01-01 --to 2024-01-31
 
   ┌──────────────────┬────────────────────┬────────────┬──────────┬───────────┐
   │ Date             │ Description        │ Category   │   Amount │   Balance │
@@ -93,6 +95,25 @@ $ monzo --json balance | jq '.balance / 100'
 $ monzo --json tx --since 30d -c eating_out
 $ monzo --json pots
 ```
+
+### Date ranges (`--from` / `--to`)
+
+For **`transactions`**, **`search`**, **`insights`**, and **`export`** you can bound the window with:
+
+- **`--from`** — same as **`--since`**: a calendar date **`YYYY-MM-DD`** (start of that day, UTC) or a relative window like **`30d`**, **`3m`**, **`1y`**.
+- **`--to`** — same as **`--before`**: for a plain **`YYYY-MM-DD`**, the CLI treats it as the **last day included** in the range (it sets the Monzo API’s exclusive `before` to midnight **after** that day).
+
+Example — all of January last year:
+
+```bash
+monzo insights categories --from 2024-01-01 --to 2024-01-31
+monzo export -f csv -o jan-2024.csv --from 2024-01-01 --to 2024-01-31
+monzo search "Tesco" --from 2024-01-01 --to 2024-01-31
+```
+
+On **`search`**, **`insights`**, and **`export`**, if you use **`--to`** you must also set **`--from`** (or **`--since`**). For an advanced upper bound you can still pass a full RFC3339 timestamp or a Monzo transaction id to **`--before`**; only the short `YYYY-MM-DD` form is rewritten as an inclusive end date.
+
+With **`insights`**, flags can appear before or after the subcommand, e.g. `monzo insights categories --from 2024-01-01 --to 2024-01-31`.
 
 ## All Commands
 
