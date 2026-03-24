@@ -101,14 +101,22 @@ impl MonzoClient {
         Ok(data.transactions)
     }
 
-    /// Fetch all transactions using pagination (max 100 per page)
+    /// Fetch all transactions in a date window, paginating 100 at a time.
+    ///
+    /// Monzo's SCA restriction blocks cursor-based pagination (transaction ID as `since`)
+    /// once the 5-minute post-login window has passed. We paginate using the **timestamp**
+    /// of the last transaction instead, which is always permitted for confidential OAuth clients.
+    /// Overlap across page boundaries is handled by deduplicating on transaction ID.
     pub async fn all_transactions(
         &self,
         account_id: &str,
         since: Option<&str>,
         before: Option<&str>,
     ) -> Result<Vec<Transaction>> {
-        let mut all = Vec::new();
+        use std::collections::HashSet;
+
+        let mut all: Vec<Transaction> = Vec::new();
+        let mut seen_ids: HashSet<String> = HashSet::new();
         let mut current_since = since.map(|s| s.to_string());
 
         loop {
@@ -125,16 +133,31 @@ impl MonzoClient {
                 break;
             }
 
-            let last_id = batch.last().unwrap().id.clone();
-            all.extend(batch);
+            let page_len = batch.len();
+            // Advance the timestamp cursor to the last transaction's created time.
+            // Using the timestamp (not the transaction ID) avoids the SCA cursor restriction.
+            let next_since = batch.last().unwrap().created.to_rfc3339();
 
-            // Use the last transaction ID as `since` for next page
-            current_since = Some(last_id);
+            let new_before = all.len();
+            for tx in batch {
+                if seen_ids.insert(tx.id.clone()) {
+                    all.push(tx);
+                }
+            }
+            let added = all.len() - new_before;
 
-            // Safety: if we got fewer than 100, we've reached the end
-            if all.len() % 100 != 0 {
+            // If no new transactions were added (all were duplicates), we've reached the
+            // end of the window — avoids an infinite loop on same-second timestamps.
+            if added == 0 {
                 break;
             }
+
+            // Fewer than 100 returned means we're on the last page.
+            if page_len < 100 {
+                break;
+            }
+
+            current_since = Some(next_since);
         }
 
         Ok(all)
@@ -334,6 +357,19 @@ impl MonzoClient {
                 "Authentication failed (401). Your token may have expired.\n\
                  Run `monzo auth refresh` to refresh your token, or\n\
                  Run `monzo auth login` to re-authenticate."
+            );
+        }
+        if resp.status() == 403 {
+            anyhow::bail!(
+                "Access denied (403) — Monzo SCA restriction.\n\n\
+                 Monzo only serves transactions from the last 90 days via the API.\n\
+                 Data older than 90 days is permanently inaccessible unless you\n\
+                 re-authenticate within a 5-minute window and query immediately.\n\n\
+                 To access recent transactions (up to 90 days):\n\
+                 1. Run `monzo auth login` (or `monzo auth refresh`)\n\
+                 2. Approve the request in the Monzo app on your phone\n\
+                 3. Run your command immediately within ~5 minutes\n\n\
+                 Dates older than 90 days (e.g. --from 2024-01-01) will never work."
             );
         }
         if resp.status() == 429 {
