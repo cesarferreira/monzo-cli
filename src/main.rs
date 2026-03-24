@@ -14,6 +14,8 @@ use client::MonzoClient;
 use config::Config;
 use models::format_money;
 
+const DEVELOPER_PORTAL_APPS_URL: &str = "https://developers.monzo.com/apps/home";
+
 /// Load config and auto-refresh the token if expired (and refresh credentials are available).
 /// Returns an up-to-date (Config, MonzoClient) pair ready to use.
 async fn authenticated() -> Result<(Config, MonzoClient)> {
@@ -182,13 +184,17 @@ enum Commands {
 
     /// Show where your config is stored
     Config,
+
+    /// Open the Monzo developer portal (OAuth apps) in your browser
+    #[command(visible_alias = "apps")]
+    Developers,
 }
 
 #[derive(Subcommand)]
 enum AuthAction {
     /// Login via OAuth2 (opens browser)
     Login {
-        /// OAuth client ID (from developers.monzo.com)
+        /// OAuth client ID (from the developer portal)
         #[arg(long, env = "MONZO_CLIENT_ID")]
         client_id: String,
         /// OAuth client secret
@@ -204,6 +210,11 @@ enum AuthAction {
         /// Account ID (optional, will auto-detect if omitted)
         #[arg(long)]
         account_id: Option<String>,
+    },
+    /// Set default account (use IDs from `monzo accounts`; does not change your token)
+    SetAccount {
+        /// Account ID (e.g. acc_00009…)
+        account_id: String,
     },
     /// Check token status
     Status,
@@ -305,6 +316,7 @@ async fn run() -> Result<()> {
             output,
             since,
         } => handle_export(&format, &output, &since).await,
+        Commands::Developers => handle_developers(),
     }
 }
 
@@ -320,6 +332,7 @@ async fn handle_auth(action: AuthAction) -> Result<()> {
         AuthAction::SetToken { token, account_id } => {
             auth::set_token(&token, account_id.as_deref())
         }
+        AuthAction::SetAccount { account_id } => auth::set_default_account(&account_id),
         AuthAction::Status => {
             let config = Config::load()?;
             let client = MonzoClient::new(&config)?;
@@ -357,6 +370,13 @@ fn handle_config() -> Result<()> {
     Ok(())
 }
 
+fn handle_developers() -> Result<()> {
+    println!("Opening {} …", DEVELOPER_PORTAL_APPS_URL);
+    open::that(DEVELOPER_PORTAL_APPS_URL)
+        .with_context(|| format!("failed to open {}", DEVELOPER_PORTAL_APPS_URL))?;
+    Ok(())
+}
+
 // ── Accounts ────────────────────────────────────────────────────────────────
 
 async fn handle_accounts(json: bool) -> Result<()> {
@@ -370,7 +390,7 @@ async fn handle_accounts(json: bool) -> Result<()> {
         if config.account_id.is_none() && !accounts.is_empty() {
             println!(
                 "\n{}",
-                "Tip: set your default account with `monzo auth set-token <token> --account-id <id>`"
+                "Tip: set your default account with `monzo auth set-account <id>` (use the ID column, acc_…)"
                     .dimmed()
             );
         }

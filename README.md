@@ -118,9 +118,12 @@ $ monzo --json pots
 | `webhooks` | List, add, or remove webhooks |
 | `feed <title>` | Push a notification to your Monzo app |
 | `accounts` | List all accounts |
+| `developers` | Open [Monzo developer portal](https://developers.monzo.com/apps/home) (OAuth apps) in browser |
+| `apps` | Alias for `developers` |
 | `auth login` | OAuth2 login (opens browser) |
 | `auth refresh` | Refresh expired token |
 | `auth set-token <token>` | Quick setup with playground token |
+| `auth set-account <id>` | Set default account (`acc_…` from `monzo accounts` **ID** column) |
 | `auth status` | Check if token is valid |
 
 ## Install
@@ -146,7 +149,7 @@ cargo build --release
 
 ### Option 1: OAuth2 (recommended)
 
-1. Create an OAuth client at [developers.monzo.com](https://developers.monzo.com)
+1. Create an OAuth client in the [Monzo developer apps console](https://developers.monzo.com/apps/home) (or run `monzo developers` to open it in your browser)
 2. Set the redirect URL to `http://localhost:6789/callback`
 3. Run:
 
@@ -161,6 +164,27 @@ Get a token from the [Monzo API Playground](https://developers.monzo.com/api/pla
 ```bash
 monzo auth set-token YOUR_ACCESS_TOKEN
 ```
+
+Optional: set the default account in the same step (IDs from `monzo accounts`, see below):
+
+```bash
+monzo auth set-token YOUR_ACCESS_TOKEN --account-id acc_00009xxxxxxxx
+```
+
+### Default account
+
+Monzo’s API needs an **account ID** on top of your access token: you can have several accounts (personal, joint, Flex, rewards, etc.), and commands like `balance`, `transactions`, and `pots` all use one **default** account stored in config.
+
+After **`monzo auth login`**, the CLI tries to pick the first `uk_retail` account automatically. If that did not run (for example, you still had to approve login in the Monzo app), you may be logged in but see *“No account ID configured”* or similar when running other commands. Fix it without re-authenticating:
+
+```bash
+monzo accounts
+monzo auth set-account acc_00009xxxxxxxx
+```
+
+**Use the value in the `ID` column** — it always starts with **`acc_`**. The **Description** column often shows a **`user_…`** ID or joint-account text; that is **not** an account ID. Passing a `user_…` value will be rejected by the CLI (and would cause API errors such as 403 if it were saved manually).
+
+You can also set `account_id` in your config file (`monzo config` shows the path).
 
 ## Caveats
 

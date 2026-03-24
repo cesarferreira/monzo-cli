@@ -174,12 +174,63 @@ pub async fn refresh_flow() -> Result<()> {
     Ok(())
 }
 
+/// Monzo account IDs are `acc_…` (from the **ID** column in `monzo accounts`). Values like `user_…`
+/// are user IDs and appear in the description column — the API will reject them.
+fn validate_account_id(raw: &str) -> Result<String> {
+    let id = raw.trim();
+    if id.is_empty() {
+        anyhow::bail!("Account ID cannot be empty.");
+    }
+    if !id.starts_with("acc_") {
+        anyhow::bail!(
+            "That value is not a Monzo account ID (expected acc_…).\n\
+             Run `monzo accounts` and copy the **ID** column — not the description (often user_… or joint text).\n\
+             Example: monzo auth set-account acc_00009NbGbhFDqwAmJVX7p3"
+        );
+    }
+    Ok(id.to_string())
+}
+
+/// Save the default Monzo account (balance, transactions, pots, etc.) without changing the token.
+pub fn set_default_account(account_id: &str) -> Result<()> {
+    let id = validate_account_id(account_id)?;
+    let mut config = Config::load()?;
+    config.account_id = Some(id.clone());
+    config.save()?;
+    println!("Default account saved: {id}");
+    Ok(())
+}
+
+#[cfg(test)]
+mod validate_account_id_tests {
+    use super::validate_account_id;
+
+    #[test]
+    fn accepts_acc_prefix_trimmed() {
+        assert_eq!(
+            validate_account_id("  acc_00009NbGbhFDqwAmJVX7p3  ").unwrap(),
+            "acc_00009NbGbhFDqwAmJVX7p3"
+        );
+    }
+
+    #[test]
+    fn rejects_user_id() {
+        let err = validate_account_id("user_00009CsMxRaK9HzSw0Zik5").unwrap_err();
+        assert!(err.to_string().contains("acc_"));
+    }
+
+    #[test]
+    fn rejects_empty() {
+        assert!(validate_account_id("   ").is_err());
+    }
+}
+
 /// Quick token setup for users who have a token from the Monzo developer playground
 pub fn set_token(token: &str, account_id: Option<&str>) -> Result<()> {
     let mut config = Config::load()?;
     config.access_token = Some(token.to_string());
     if let Some(aid) = account_id {
-        config.account_id = Some(aid.to_string());
+        config.account_id = Some(validate_account_id(aid)?);
     }
     config.save()?;
     println!("Token saved to config.");

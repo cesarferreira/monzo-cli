@@ -59,7 +59,7 @@ impl Config {
     pub fn account_id(&self) -> Result<&str> {
         self.account_id.as_deref().filter(|t| !t.is_empty()).ok_or_else(|| {
             anyhow::anyhow!(
-                "No account ID configured. Run `monzo auth login` or set it in the config."
+                "No account ID configured. Pick one from `monzo accounts`, then run `monzo auth set-account <id>` (or add `account_id` to your config file)."
             )
         })
     }
